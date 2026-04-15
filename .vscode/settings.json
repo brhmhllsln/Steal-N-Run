@@ -65,6 +65,8 @@
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj",
+        "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Steal N Run.sln"
+    "dotnet.defaultSolution": "Steal-N-Run.slnx",
+    "dotnet.enableWorkspaceBasedDevelopment": false
 }

@@ -1,4 +1,0 @@
-repository "Steal N Run/Steal N Run@18967545552178@cloud"
-  path "/"
-    br "/main"
-    co "/main"
