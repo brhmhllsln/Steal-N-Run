@@ -9,6 +9,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float _runSpeed = 11.0f;
     [SerializeField] float _jumpSpeed = 8.0f;
     [SerializeField] float _gravity = 25.0f;
+    [Range(0, 1)] 
+    [SerializeField] float _airControl = 0.2f;
+
 
     [Header("Bakış Ayarları")]
     [SerializeField] Transform _cameraTransform;
@@ -70,32 +73,46 @@ public class PlayerController : MonoBehaviour
     }
 
     void HandleMovement()
+{
+    bool isRunning = Input.GetKey(KeyCode.LeftShift);
+    float currentSpeed = isRunning ? _runSpeed : _walkSpeed;
+
+    float h = Input.GetAxisRaw("Horizontal");
+    float v = Input.GetAxisRaw("Vertical");
+
+    // İstenen hareket yönü
+    Vector3 targetMove = (transform.forward * v + transform.right * h).normalized;
+
+    if (_controller.isGrounded)
     {
-        bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        float currentSpeed = isRunning ? _runSpeed : _walkSpeed;
+        // Yerdeyken tam hız ve kontrol
+        _velocity.x = targetMove.x * currentSpeed;
+        _velocity.z = targetMove.z * currentSpeed;
 
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+        if (_velocity.y < 0) _velocity.y = -2f;
 
-        Vector3 move = (transform.forward * v + transform.right * h).normalized;
-
-        if (_controller.isGrounded)
+        if (_jumpBufferCounter > 0)
         {
-            if (_velocity.y < 0) _velocity.y = -2f;
-
-            if (_jumpBufferCounter > 0)
-            {
-                _velocity.y = _jumpSpeed;
-                _jumpBufferCounter = 0;
-            }
+            _velocity.y = _jumpSpeed;
+            _jumpBufferCounter = 0;
         }
-
-        _velocity.x = move.x * currentSpeed;
-        _velocity.z = move.z * currentSpeed;
-        _velocity.y -= _gravity * Time.deltaTime;
-
-        _controller.Move(_velocity * Time.deltaTime);
     }
+    else
+    {
+        // --- HAVADAYKEN KONTROL KISITLAMA ---
+        // Mevcut yatay hızı koru ama oyuncunun girdisine göre küçük bir miktar ekle
+        float airX = Mathf.Lerp(_velocity.x, targetMove.x * currentSpeed, _airControl * Time.deltaTime * 10f);
+        float airZ = Mathf.Lerp(_velocity.z, targetMove.z * currentSpeed, _airControl * Time.deltaTime * 10f);
+        
+        _velocity.x = airX;
+        _velocity.z = airZ;
+    }
+
+    // Yerçekimi her zaman uygulanır
+    _velocity.y -= _gravity * Time.deltaTime;
+
+    _controller.Move(_velocity * Time.deltaTime);
+}
 
    
     void ApplyHeadBob()
@@ -115,7 +132,7 @@ public class PlayerController : MonoBehaviour
             newPos.x = Mathf.Cos(_timer * _bobFrequency / 2f) * _bobHorizontalAmount;
 
             newPos.y = _defaultYPos + Mathf.Sin(_timer * _bobFrequency) * _bobVerticalAmount;
-
+   
             _cameraTransform.localPosition = newPos;
         }
         else
