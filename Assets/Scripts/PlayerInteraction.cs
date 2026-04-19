@@ -1,82 +1,34 @@
 using UnityEngine;
-using TMPro; 
+using TMPro;
 
 public class PlayerInteraction : MonoBehaviour
 {
-    [Header("Ayarlar")]
-    [SerializeField] float _interactDistance = 3f;
-    [SerializeField] LayerMask _interactLayer; 
-    [SerializeField] Transform _holdPos; 
-    [SerializeField] TextMeshProUGUI _interactionText; 
+    [SerializeField] float _dist = 3f;
+    [SerializeField] LayerMask _layer;
+    [SerializeField] Transform _holdPos;
+    [SerializeField] TextMeshProUGUI _uiText;
 
-    private Item _heldItem;
-    private Item _lookedItem;
+    private Item _held, _looked;
 
     void Update()
     {
-      
-        HandleRaycast();
-
-        
-        HandleInput();
-    }
-
-    void HandleRaycast()
-    {
-       
-        if (_heldItem != null)
+        if (_held == null)
         {
-            _interactionText.text = "";
-            return;
-        }
-
-        Ray ray = new Ray(transform.position, transform.forward);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, _interactDistance, _interactLayer))
-        {
-            Item item = hit.collider.GetComponent<Item>();
-            if (item != null)
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, transform.forward, out hit, _dist, _layer))
             {
-                _lookedItem = item;
-                _interactionText.text = "[E] " + item.itemName + " Al";
+                _looked = hit.collider.GetComponent<Item>();
+                if (_looked) _uiText.text = "[E] " + _looked.itemName;
             }
+            else { _looked = null; _uiText.text = ""; }
         }
-        else
-        {
-            _lookedItem = null;
-            _interactionText.text = "";
-        }
-    }
 
-    void HandleInput()
-    {
-        // ALMA VEYA KULLANMA (E)
         if (Input.GetKeyDown(KeyCode.E))
         {
-            if (_heldItem == null && _lookedItem != null)
-            {
-                PickUpItem();
-            }
-            else if (_heldItem != null)
-            {
-                _heldItem.Use();
-                _heldItem = null; 
-            }
+            if (_held == null && _looked != null) { _held = _looked; _held.PickUp(_holdPos); }
+            else if (_held != null) { _held.Use(); _held = null; }
         }
 
-       
-        if (Input.GetKeyDown(KeyCode.Q) && _heldItem != null)
-        {
-            _heldItem.Drop();
-            _heldItem = null;
-        }
-    }
-
-    void PickUpItem()
-    {
-        _heldItem = _lookedItem;
-        _heldItem.PickUp(_holdPos);
-        _lookedItem = null;
+        if (Input.GetKeyDown(KeyCode.Q) && _held != null) { _held.Drop(); _held = null; }
     }
 }
